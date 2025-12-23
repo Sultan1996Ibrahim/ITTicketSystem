@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16
+    container_name: itticket_db
+    environment:
+      POSTGRES_DB: ITTicketSystem_V2
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ITTicketSystem_V2"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    container_name: itticket_web
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Connection string داخل docker (لاحظ Host=db)
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=ITTicketSystem_V2;Username=postgres;Password=1234"
+      ASPNETCORE_ENVIRONMENT: "Development"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:

@@ -7,8 +7,8 @@ A simple IT Ticket Management System built with ASP.NET Core MVC and PostgreSQL.
 ## Default Login
 
 | Role  | Username | Password |
-|-------|----------|----------|
-| Admin |  admin   |   1234   |
+|------|---------|----------|
+| Admin | admin | 1234 |
 
 ---
 
@@ -27,56 +27,47 @@ git clone https://github.com/Sultan1996Ibrahim/ITTicketSystem.git
 cd ITTicketSystem
 Create PostgreSQL database
 
-
-2. Create PostgreSQL database
-(sql)
+sql
+Copy code
 CREATE DATABASE ITTicketSystem_V2;
+Update connection string in appsettings.Development.json
 
-
-3.Create appsettings.Development.json
-(json)
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=ITTicketSystem_V2;Username=postgres;Password=1234"
-  }
+json
+Copy code
+"ConnectionStrings": {
+  "DefaultConnection": "Host=localhost;Port=5432;Database=ITTicketSystem_V2;Username=postgres;Password=1234"
 }
+Run the project
 
-
-3.Run the project
-(bash)
+bash
+Copy code
 dotnet run
+Open browser
 
-
-4.Open browser
-(arduino)
+arduino
+Copy code
 http://localhost:5000
+Database, departments, and default users will be created automatically on first run.
 
-Database, departments, and default users are created automatically on first run.
+Option 2: Run With Docker (One-command setup)
+Requirements
+Docker Desktop
 
-
-
-
-## Option 2: Run With Docker (One-command setup)
-"https://www.docker.com/products/docker-desktop/"
-
-### Requirements
--Docker Desktop
-
-### Steps
-(bash)
+Steps
+bash
+Copy code
 docker compose up --build
-
 Open:
-(arduino)
+
+arduino
+Copy code
 http://localhost:8080
 
 
-Notes:
+Notes
+Database migrations and seed data run automatically.
 
-Docker is optional
-Database migrations and seed data run automatically
-
+Docker is optional and not required for development.
 
 Author
-Sultan Aleidi
-
+Sultan
