@@ -1,9 +1,7 @@
 \# IT Ticket System
 
 
-
 ASP.NET Core MVC Ticketing System for academic use.
-
 
 
 \## Requirements
@@ -23,7 +21,6 @@ ASP.NET Core MVC Ticketing System for academic use.
 \## Setup Instructions (Students)
 
 
-
 \### 1) Clone the repository
 
 ```bash
@@ -40,15 +37,8 @@ Create a PostgreSQL database (empty), for example:
 ITTicketSystem\_DB
 
 
-
-
 Then copy the example config:
 copy appsettings.Development.example.json appsettings.Development.json
-
-
-
-
-
 
 
 Edit appsettings.Development.json and set your connection string:
@@ -75,15 +65,9 @@ dotnet run
 
 The application will:
 
-
-
 Apply migrations automatically
 
-
-
 Seed departments
-
-
 
 Seed default users
 
@@ -91,30 +75,22 @@ Seed default users
 
 
 
-
 Default Accounts
 
-Role	 Username	Password
+Role	   Username    	Password
 
-Admin	  admin	          1234
-
-
+Admin  	  admin	        1234
 
 Additional users and managers are seeded automatically.
 
 
 
+
 Notes
-
-
 
 Database is NOT included (created automatically)
 
-
-
 Uploaded files are stored locally and ignored by Git
-
-
 
 This project is for educational purposes
 
@@ -124,9 +100,6 @@ This project is for educational purposes
 
 
 Author
-
-
-
 Sultan Aleidi
 
 
