@@ -1,0 +1,51 @@
+@model ITTicketSystem.Models.GridHeaderStatusVM
+@using ITTicketSystem.Models
+
+<div class="dropdown">
+    <a class="grid-head-link dropdown-toggle"
+       href="#"
+       role="button"
+       data-bs-toggle="dropdown"
+       aria-expanded="false">
+        @Model.Label
+    </a>
+
+    <div class="dropdown-menu shadow-sm">
+        <div class="grid-hint">Pick a status (auto applies)</div>
+
+        <select class="form-select mt-2 grid-status-select" name="status">
+            @{
+                var currentStatus = Context.Request.Query["status"].ToString();
+            }
+            <option value="" selected="@(string.IsNullOrWhiteSpace(currentStatus))">All</option>
+            <option value="@TicketStatus.New" selected="@(currentStatus == TicketStatus.New.ToString())">New</option>
+            <option value="@TicketStatus.AssignedToDepartment" selected="@(currentStatus == TicketStatus.AssignedToDepartment.ToString())">Assigned</option>
+            <option value="@TicketStatus.InProgress" selected="@(currentStatus == TicketStatus.InProgress.ToString())">In Progress</option>
+            <option value="@TicketStatus.Closed" selected="@(currentStatus == TicketStatus.Closed.ToString())">Closed</option>
+        </select>
+
+        <div class="grid-sort-row">
+            <button type="button"
+                    class="btn @(Model.IsSortActive("status","asc") ? "btn-dark" : "btn-outline-secondary") w-100 grid-sort-btn"
+                    data-sort="status"
+                    data-dir="asc">
+                Sort ↑
+            </button>
+
+            <button type="button"
+                    class="btn @(Model.IsSortActive("status","desc") ? "btn-dark" : "btn-outline-secondary") w-100 grid-sort-btn"
+                    data-sort="status"
+                    data-dir="desc">
+                Sort ↓
+            </button>
+        </div>
+
+        <div class="grid-reset-row">
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger grid-reset-btn"
+                    data-reset="status,sort,dir">
+                Reset
+            </button>
+        </div>
+    </div>
+</div>

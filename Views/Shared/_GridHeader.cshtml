@@ -1,0 +1,44 @@
+@model ITTicketSystem.Models.GridHeaderVM
+
+<div class="dropdown">
+    <a class="grid-head-link dropdown-toggle"
+       href="#"
+       role="button"
+       data-bs-toggle="dropdown"
+       aria-expanded="false">
+        @Model.Label
+    </a>
+
+    <div class="dropdown-menu shadow-sm">
+        <div class="grid-hint">Type to filter and press Enter (or wait 400ms)</div>
+
+        <input class="form-control mt-2 grid-filter-input"
+               name="@Model.Param"
+               placeholder="Type to filter..."
+               value="@(Context.Request.Query[Model.Param].ToString())" />
+
+        <div class="grid-sort-row">
+            <button type="button"
+                    class="btn @(Model.IsSortActive("asc") ? "btn-dark" : "btn-outline-secondary") w-100 grid-sort-btn"
+                    data-sort="@Model.Param"
+                    data-dir="asc">
+                Sort ↑
+            </button>
+
+            <button type="button"
+                    class="btn @(Model.IsSortActive("desc") ? "btn-dark" : "btn-outline-secondary") w-100 grid-sort-btn"
+                    data-sort="@Model.Param"
+                    data-dir="desc">
+                Sort ↓
+            </button>
+        </div>
+
+        <div class="grid-reset-row">
+            <button type="button"
+                    class="btn btn-sm btn-outline-danger grid-reset-btn"
+                    data-reset="@Model.Param,sort,dir">
+                Reset
+            </button>
+        </div>
+    </div>
+</div>

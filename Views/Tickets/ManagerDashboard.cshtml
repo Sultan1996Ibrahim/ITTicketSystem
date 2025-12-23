@@ -1,0 +1,141 @@
+@model IEnumerable<ITTicketSystem.Models.Ticket>
+@using ITTicketSystem.Models
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Manager Dashboard";
+
+    TicketStatus? currentFilter = null;
+    if (ViewBag.CurrentFilter != null)
+    {
+        currentFilter = (TicketStatus)ViewBag.CurrentFilter;
+    }
+
+    int totalTickets     = ViewBag.TotalTickets ?? Model.Count();
+    int awaitingApproval = ViewBag.AwaitingApproval ?? Model.Count(t => t.Status == TicketStatus.New);
+    int workInProgress   = ViewBag.WorkInProgress ?? Model.Count(t =>
+                            t.Status == TicketStatus.AssignedToDepartment ||
+                            t.Status == TicketStatus.InProgress);
+    int closedTickets    = ViewBag.ClosedTickets ?? Model.Count(t => t.Status == TicketStatus.Closed);
+
+    string CardClass(TicketStatus? thisFilter)
+        => thisFilter == currentFilter ? "border-primary shadow-sm" : "border-light";
+
+    string CurrentFilterLabel()
+        => currentFilter switch
+        {
+            TicketStatus.New        => "Awaiting Approval",
+            TicketStatus.InProgress => "Work In Progress",
+            TicketStatus.Closed     => "Closed",
+            _                       => "All"
+        };
+
+    var sort = Context.Request.Query["sort"].ToString();
+    var dir = Context.Request.Query["dir"].ToString();
+}
+
+<h2 class="mb-4">Manager Dashboard</h2>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-3">
+        <a asp-action="ManagerDashboard" class="text-decoration-none text-dark">
+            <div class="card text-bg-light @CardClass(null)">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Total Tickets</h6>
+                    <h2>@totalTickets</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a asp-action="ManagerDashboard" asp-route-filter="@TicketStatus.New" class="text-decoration-none text-dark">
+            <div class="card text-bg-light @CardClass(TicketStatus.New)">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Awaiting Approval</h6>
+                    <h2>@awaitingApproval</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a asp-action="ManagerDashboard" asp-route-filter="@TicketStatus.InProgress" class="text-decoration-none text-dark">
+            <div class="card text-bg-light @CardClass(TicketStatus.InProgress)">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Work In Progress</h6>
+                    <h2>@workInProgress</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-3">
+        <a asp-action="ManagerDashboard" asp-route-filter="@TicketStatus.Closed" class="text-decoration-none text-dark">
+            <div class="card text-bg-light @CardClass(TicketStatus.Closed)">
+                <div class="card-body text-center">
+                    <h6 class="card-title">Closed</h6>
+                    <h2>@closedTickets</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<h4>Tickets (@CurrentFilterLabel())</h4>
+
+@if (!Model.Any())
+{
+    <p>No tickets found for this filter.</p>
+}
+else
+{
+    <div class="grid-table-wrap">
+        <table class="table table-striped table-bordered align-middle mt-3">
+            <thead class="table-light grid-head">
+                <tr>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Ticket Number", "ticketNumber", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Title", "title", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Department", "department", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("From Department", "fromDepartment", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeaderStatus", new GridHeaderStatusVM("Status", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Created By", "createdBy", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Assigned To", "assignedTo", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Created At", "createdAt", sort, dir))</th>
+                    <th style="width:140px;">Quick View</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="Tickets" asp-action="Details" asp-route-id="@t.Id"
+                           class="badge bg-light text-dark text-decoration-none">
+                            @t.ReferenceNumber
+                        </a>
+                    </td>
+
+                    <td>@t.Title</td>
+                    <td>@t.Department?.Name</td>
+                    <td>@(t.FromDepartment?.Name ?? "-")</td>
+
+                    <td><partial name="~/Views/Shared/_TicketStatusBadge.cshtml" model="t.Status" /></td>
+                    <td>@t.CreatedBy</td>
+                    <td>@(t.AssignedUser?.UserName ?? "-")</td>
+                    <td>@t.CreatedAt.ToLocalTime()</td>
+
+                    <td>
+                        <a asp-controller="Tickets" asp-action="Details" asp-route-id="@t.Id" asp-route-from="manager"
+                           class="btn btn-sm btn-outline-primary"
+                           data-ticket-canvas="1">
+                            Quick View
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

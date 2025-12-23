@@ -1,0 +1,163 @@
+@model ITTicketSystem.Models.AppUserEditVM
+@using ITTicketSystem.Models
+
+@{
+    ViewData["Title"] = "Edit User";
+
+    var departments = ViewBag.Departments as List<Department> ?? new();
+    var selected = Model.ManagedDepartmentIds ?? new List<int>();
+}
+
+<h2>Edit User</h2>
+<hr />
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label class="form-label">UserName</label>
+        <input class="form-control" value="@Model.UserName" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Role</label>
+        <select asp-for="Role" class="form-select" id="roleSelect">
+            <option value="User">User</option>
+            <option value="Manager">Manager</option>
+            <option value="Admin">Admin</option>
+        </select>
+    </div>
+
+    <!-- User Department -->
+    <div class="mb-3" id="userDeptBlock">
+        <label class="form-label">Department (User)</label>
+        <select asp-for="DepartmentId" class="form-select" asp-items="ViewBag.UserDepartmentsSelectList">
+            <option value="">-- Select --</option>
+        </select>
+    </div>
+
+    <!-- Manager Departments -->
+    <div class="mb-3" id="managerDeptBlock">
+        <label class="form-label">Managed Departments (Manager)</label>
+
+        <div class="dropdown w-100">
+            <button class="btn btn-outline-secondary dropdown-toggle w-100 text-start"
+                    type="button" data-bs-toggle="dropdown" aria-expanded="false"
+                    id="deptBtn">
+                اختر الإدارات
+            </button>
+
+            <div class="dropdown-menu p-2 w-100" style="max-height:260px; overflow:auto;">
+                <input type="text" class="form-control mb-2" placeholder="ابحث عن إدارة..."
+                       id="deptSearch" />
+
+                <div id="deptList">
+                    @foreach (var d in departments)
+                    {
+                        var isChecked = selected.Contains(d.Id);
+                        <div class="form-check dept-item">
+                            <input class="form-check-input dept-check"
+                                   type="checkbox"
+                                   value="@d.Id"
+                                   @(isChecked ? "checked" : "") />
+                            <label class="form-check-label">@d.Name</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden inputs to post ManagedDepartmentIds -->
+        <div id="deptHiddenInputs"></div>
+
+        <div class="form-text">
+            يظهر هذا الخيار فقط للـ Manager.
+        </div>
+    </div>
+
+    <div class="form-check mb-3">
+        <input class="form-check-input" asp-for="IsActive" />
+        <label class="form-check-label" asp-for="IsActive">Active</label>
+    </div>
+    
+    <div class="form-check mb-3" id="canManageBlock">
+    <input class="form-check-input" asp-for="CanManageDeptTickets" />
+    <label class="form-check-label" asp-for="CanManageDeptTickets">
+        Allow user to Manage department tickets (self-assign)
+    </label>
+</div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        (function () {
+            const role = document.getElementById("roleSelect");
+            const userBlock = document.getElementById("userDeptBlock");
+            const mgrBlock = document.getElementById("managerDeptBlock");
+
+            function toggle() {
+                const v = role.value;
+                if (v === "Manager") {
+                    userBlock.style.display = "none";
+                    mgrBlock.style.display = "";
+                } else if (v === "User") {
+                    userBlock.style.display = "";
+                    mgrBlock.style.display = "none";
+                } else {
+                    userBlock.style.display = "none";
+                    mgrBlock.style.display = "none";
+                }
+            }
+            role.addEventListener("change", toggle);
+            toggle();
+        })();
+
+        (function () {
+            const checks = document.querySelectorAll('.dept-check');
+            const hiddenBox = document.getElementById('deptHiddenInputs');
+            const btn = document.getElementById('deptBtn');
+            const search = document.getElementById('deptSearch');
+
+            function refreshHidden() {
+                hiddenBox.innerHTML = '';
+                const selected = [];
+
+                checks.forEach(c => {
+                    if (c.checked) {
+                        selected.push(c.value);
+
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'ManagedDepartmentIds';
+                        input.value = c.value;
+                        hiddenBox.appendChild(input);
+                    }
+                });
+
+                btn.textContent = selected.length
+                    ? `تم اختيار (${selected.length}) إدارة`
+                    : 'اختر الإدارات';
+            }
+
+            checks.forEach(c => c.addEventListener('change', refreshHidden));
+
+            if (search) {
+                search.addEventListener('input', function () {
+                    const q = this.value.trim().toLowerCase();
+                    document.querySelectorAll('#deptList .dept-item').forEach(item => {
+                        const text = item.innerText.toLowerCase();
+                        item.style.display = text.includes(q) ? '' : 'none';
+                    });
+                });
+            }
+
+            refreshHidden();
+        })();
+    </script>
+}

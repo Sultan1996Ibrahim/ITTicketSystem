@@ -1,0 +1,16 @@
+@model ITTicketSystem.Models.TicketStatus
+@using ITTicketSystem.Models
+
+@{
+    // Unified status badge styling across the whole app
+    var css = Model switch
+    {
+        TicketStatus.New                  => "badge bg-warning text-dark",
+        TicketStatus.AssignedToDepartment => "badge bg-warning text-dark",
+        TicketStatus.InProgress           => "badge bg-info text-dark",
+        TicketStatus.Closed               => "badge bg-success",
+        _                                 => "badge bg-light text-dark"
+    };
+}
+
+<span class="@css">@Model</span>

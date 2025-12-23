@@ -1,0 +1,101 @@
+@model IEnumerable<ITTicketSystem.Models.Ticket>
+@using ITTicketSystem.Models
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Requests";
+
+    string PriorityBadgeClass(TicketPriority? priority) => priority switch
+    {
+        TicketPriority.Normal   => "badge bg-secondary",
+        TicketPriority.High     => "badge bg-warning text-dark",
+        TicketPriority.Critical => "badge bg-danger",
+        null                    => "badge bg-light text-dark",
+        _                       => "badge bg-light text-dark"
+    };
+
+    var sort = Context.Request.Query["sort"].ToString();
+    var dir = Context.Request.Query["dir"].ToString();
+}
+
+<h2 class="mb-3">Requests</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No requests assigned to you.</div>
+}
+else
+{
+    <div class="grid-table-wrap">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light grid-head">
+                <tr>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Ticket Number", "ticketNumber", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Title", "title", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Department", "department", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("From Department", "fromDepartment", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeaderStatus", new GridHeaderStatusVM("Status", sort, dir))</th>
+                    <th>Priority</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Created At", "createdAt", sort, dir))</th>
+                    <th style="width:260px;">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td class="fw-semibold">
+                        <a asp-controller="Tickets"
+                           asp-action="Details"
+                           asp-route-id="@t.Id"
+                           asp-route-from="requests"
+                           class="text-decoration-none">
+                            @t.ReferenceNumber
+                        </a>
+                    </td>
+
+                    <td>@t.Title</td>
+                    <td>@t.Department?.Name</td>
+                    <td>@(t.FromDepartment?.Name ?? "-")</td>
+
+                    <td><partial name="~/Views/Shared/_TicketStatusBadge.cshtml" model="t.Status" /></td>
+                    <td><span class="@PriorityBadgeClass(t.Priority)">@(t.Priority?.ToString() ?? "-")</span></td>
+                    <td>@t.CreatedAt.ToLocalTime()</td>
+
+                    <td class="d-flex gap-2 flex-wrap">
+                        <a asp-controller="Tickets"
+                           asp-action="Details"
+                           asp-route-id="@t.Id"
+                           asp-route-from="requests"
+                           data-ticket-canvas="1"
+                           class="btn btn-sm btn-outline-primary">
+                            Quick View
+                        </a>
+
+                        @if (t.Status == TicketStatus.AssignedToDepartment)
+                        {
+                            <form asp-controller="Tickets" asp-action="ChangeStatus" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@t.Id" />
+                                <input type="hidden" name="newStatus" value="@TicketStatus.InProgress" />
+                                <button type="submit" class="btn btn-sm btn-warning">Solve</button>
+                            </form>
+                        }
+
+                        @if (t.Status == TicketStatus.InProgress)
+                        {
+                            <form asp-controller="Tickets" asp-action="ChangeStatus" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@t.Id" />
+                                <input type="hidden" name="newStatus" value="@TicketStatus.Closed" />
+                                <button type="submit" class="btn btn-sm btn-success">Close</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

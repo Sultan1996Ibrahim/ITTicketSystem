@@ -1,0 +1,25 @@
+@model ITTicketSystem.Models.Employee
+
+@{
+    ViewData["Title"] = "Add Employee";
+}
+
+<h1>Add Employee</h1>
+
+<form asp-action="Create" method="post">
+    <div class="form-group mb-3">
+        <label class="form-label">Name</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label class="form-label">Department Name</label>
+        <input asp-for="DepartmentName" class="form-control" />
+        <small class="text-muted">
+            Use the same department name as in Departments table (e.g. "إدارة تقنية المعلومات").
+        </small>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>

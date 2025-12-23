@@ -1,0 +1,38 @@
+@model IEnumerable<ITTicketSystem.Models.Employee>
+
+@{
+    ViewData["Title"] = "Employees";
+}
+
+<h1>Employees</h1>
+
+<a asp-action="Create" class="btn btn-primary mb-3">Add Employee</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var e in Model)
+    {
+        <tr>
+            <td>@e.Name</td>
+            <td>@e.DepartmentName</td>
+            <td>@(e.IsActive ? "Active" : "Archived")</td>
+            <td>
+                <form asp-action="ToggleArchive" method="post" class="d-inline">
+                    <input type="hidden" name="id" value="@e.Id" />
+                    <button type="submit" class="btn btn-sm @(e.IsActive ? "btn-warning" : "btn-success")">
+                        @(e.IsActive ? "Archive" : "Activate")
+                    </button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>

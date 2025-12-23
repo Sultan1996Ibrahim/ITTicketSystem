@@ -1,0 +1,23 @@
+@{
+    var key     = (ViewData["Key"] as string) ?? "";
+    var label   = (ViewData["Label"] as string) ?? "";
+    var curSort = (ViewData["CurSort"] as string) ?? "";
+    var curDir  = (ViewData["CurDir"] as string) ?? "";
+
+    string nextDir = (string.Equals(curSort, key, StringComparison.OrdinalIgnoreCase) && string.Equals(curDir, "asc", StringComparison.OrdinalIgnoreCase))
+        ? "desc"
+        : "asc";
+}
+
+<a class="th-filter text-decoration-none"
+   href="javascript:void(0)"
+   onclick="
+     const f=document.createElement('form');
+     f.method='get';
+     f.style.display='none';
+     const s=document.createElement('input'); s.name='sort'; s.value='@key';
+     const d=document.createElement('input'); d.name='dir'; d.value='@nextDir';
+     f.appendChild(s); f.appendChild(d);
+     document.body.appendChild(f); f.submit();">
+    @label <i class="bi bi-arrow-down-up"></i>
+</a>

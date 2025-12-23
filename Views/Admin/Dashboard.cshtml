@@ -1,0 +1,100 @@
+@model IEnumerable<ITTicketSystem.Models.Ticket>
+@using ITTicketSystem.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+
+    string PriorityBadgeClass(TicketPriority? priority) => priority switch
+    {
+        TicketPriority.Normal   => "badge bg-secondary",
+        TicketPriority.High     => "badge bg-warning text-dark",
+        TicketPriority.Critical => "badge bg-danger",
+        null                    => "badge bg-light text-dark",
+        _                       => "badge bg-light text-dark"
+    };
+
+
+    var sort = Context.Request.Query["sort"].ToString();
+    var dir = Context.Request.Query["dir"].ToString();
+}
+
+<h2 class="mb-3">Admin Dashboard (All Tickets)</h2>
+
+<form asp-action="Dashboard" method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-md-4">
+        <label class="form-label">Filter by Department</label>
+        <select name="departmentId" class="form-select" asp-items="(SelectList)ViewBag.Departments">
+            <option value="">-- All Departments --</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No tickets found.</div>
+}
+else
+{
+    <div class="grid-table-wrap">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-light grid-head">
+                <tr>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Ticket Number", "ticketNumber", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Title", "title", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Department", "department", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("From Department", "fromDepartment", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeaderStatus", new GridHeaderStatusVM("Status", sort, dir))</th>
+                    <th>Priority</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Created By", "createdBy", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Assigned To", "assignedTo", sort, dir))</th>
+                    <th>@await Html.PartialAsync("_GridHeader", new GridHeaderVM("Created At", "createdAt", sort, dir))</th>
+                    <th style="width:140px;">Quick View</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td class="fw-semibold">
+                        <a asp-controller="Tickets" asp-action="Details" asp-route-id="@t.Id" asp-route-from="admin"
+                           class="text-decoration-none">
+                            @t.ReferenceNumber
+                        </a>
+                    </td>
+
+                    <td>@t.Title</td>
+                    <td>@t.Department?.Name</td>
+                    <td>@(t.FromDepartment?.Name ?? "-")</td>
+
+                    <td><partial name="~/Views/Shared/_TicketStatusBadge.cshtml" model="t.Status" /></td>
+
+                    <td>
+                        <span class="@PriorityBadgeClass(t.Priority)">
+                            @(t.Priority?.ToString() ?? "-")
+                        </span>
+                    </td>
+
+                    <td>@t.CreatedBy</td>
+                    <td>@(t.AssignedUser?.UserName ?? "-")</td>
+                    <td>@t.CreatedAt.ToLocalTime()</td>
+
+                    <td>
+                        <a asp-controller="Tickets" asp-action="Details" asp-route-id="@t.Id" asp-route-from="admin"
+                           class="btn btn-sm btn-outline-primary"
+                           data-ticket-canvas="1">
+                            Quick View
+                        </a>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}

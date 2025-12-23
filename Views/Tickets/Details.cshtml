@@ -1,0 +1,368 @@
+@model ITTicketSystem.Models.Ticket
+@using ITTicketSystem.Models
+@using System.Linq
+
+@{
+    var isAjax = Context.Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+    if (isAjax) { Layout = null; }
+
+    ViewData["Title"] = "Ticket Details";
+
+    var currentRole = ViewData["CurrentRole"] is UserRole r ? r : UserRole.User;
+
+    int? currentUserId = ViewBag.CurrentUserId as int?;
+    int? currentDeptId = ViewBag.CurrentDepartmentId as int?;
+    bool canManage = ViewBag.CanManage == true;
+
+    bool showActions = !isAjax;
+
+    var history = (ViewBag.History as IEnumerable<TicketHistory> ?? Enumerable.Empty<TicketHistory>())
+                  .OrderBy(h => h.ChangedAt)
+                  .ToList();
+
+    var users = ViewBag.AssignableUsers as IEnumerable<AppUser> ?? Enumerable.Empty<AppUser>();
+
+    bool managerCanAct = ViewBag.ManagerCanAct == true;
+
+    string PriorityBadgeClass(TicketPriority? priority) => priority switch
+    {
+        TicketPriority.Normal => "badge bg-secondary",
+        TicketPriority.High => "badge bg-warning text-dark",
+        TicketPriority.Critical => "badge bg-danger",
+        null => "badge bg-light text-dark",
+        _ => "badge bg-light text-dark"
+    };
+
+    string StatusBadgeClass(TicketStatus status) => status switch
+    {
+        TicketStatus.New => "badge bg-warning text-dark",
+        TicketStatus.AssignedToDepartment => "badge bg-warning text-dark",
+        TicketStatus.InProgress => "badge bg-info text-dark",
+        TicketStatus.Closed => "badge bg-success",
+        _ => "badge bg-light text-dark"
+    };
+
+    bool isAssignedToCurrentUser =
+        currentRole == UserRole.User &&
+        currentUserId.HasValue &&
+        Model.AssignedUserId.HasValue &&
+        Model.AssignedUserId.Value == currentUserId.Value;
+
+    bool isSameDept = currentDeptId.HasValue && Model.DepartmentId == currentDeptId.Value;
+
+    bool showManageButton =
+        showActions &&
+        currentRole == UserRole.User &&
+        canManage &&
+        isSameDept &&
+        Model.Status == TicketStatus.New;
+
+    var from = ViewBag.From as string;
+}
+
+<style>
+    .qd-wrap { display: flex; flex-direction: column; gap: 14px; }
+    .qd-card { border-radius: 14px; }
+    .qd-meta { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .qd-ref { color:#6c757d; font-size:.9rem; }
+    .qd-desc { white-space: pre-wrap; }
+
+    .qd-info .list-group-item{
+        display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+    }
+    .qd-info .list-group-item span:last-child{
+        text-align:end; font-weight:600;
+    }
+
+    .qd-history { display:flex; flex-direction:column; gap:10px; }
+    .qd-history-item { background:#f8f9fa; border:1px solid rgba(0,0,0,.08); border-radius:12px; padding:12px; }
+
+    :root, body { overflow-x: hidden; }
+</style>
+
+@if (!isAjax)
+{
+    <h1 class="mb-3">Ticket Details</h1>
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@err.ErrorMessage</div>
+        }
+    </div>
+}
+
+<div class="qd-wrap">
+    <div class="card qd-card shadow-sm">
+        <div class="card-body">
+            <div class="qd-meta">
+                <div>
+                    <h4 class="mb-1">@Model.Title</h4>
+                    <div class="qd-ref">
+                        Ticket Number: <span class="badge bg-secondary">@Model.ReferenceNumber</span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <span class="@StatusBadgeClass(Model.Status)">@Model.Status</span>
+                    <span class="@PriorityBadgeClass(Model.Priority)">@(Model.Priority?.ToString() ?? "-")</span>
+                </div>
+            </div>
+
+            <hr />
+
+            <div class="mb-2">
+                <div class="text-muted small mb-1">Description</div>
+                <div class="border rounded p-2 bg-light qd-desc">@Model.Description</div>
+            </div>
+
+            <div class="mt-3">
+                <ul class="list-group qd-info">
+                    <li class="list-group-item">
+                        <span class="text-muted">Department</span>
+                        <span>@Model.Department?.Name</span>
+                    </li>
+
+                    <li class="list-group-item">
+                        <span class="text-muted">From Department</span>
+                        <span>@(Model.FromDepartment?.Name ?? "-")</span>
+                    </li>
+
+                    <li class="list-group-item">
+                        <span class="text-muted">Created By</span>
+                        <span>@Model.CreatedBy</span>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="text-muted">Created At</span>
+                        <span>@Model.CreatedAt.ToLocalTime()</span>
+                    </li>
+                    <li class="list-group-item">
+                        <span class="text-muted">Assigned To</span>
+                        <span>@(Model.AssignedUser?.UserName ?? "-")</span>
+                    </li>
+                </ul>
+            </div>
+
+            @if (showManageButton)
+            {
+                <hr />
+                <form asp-controller="Tickets" asp-action="Manage" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-person-check me-1"></i> Manage (Self-Assign)
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (Model.Attachments != null && Model.Attachments.Any())
+    {
+        <div class="card qd-card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-3">Attachments</h5>
+                <ul class="list-group">
+                    @foreach (var att in Model.Attachments)
+                    {
+                        var url = Url.Content("~/" + att.FilePath.Replace("\\", "/"));
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>@att.FileName</span>
+                            <span>
+                                <a href="@url" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                                <a href="@url" download class="btn btn-sm btn-outline-secondary ms-1">Download</a>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+
+    @* ✅ Requests Actions (User assigned) *@
+    @if (showActions && isAssignedToCurrentUser)
+    {
+        <div class="card qd-card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-3">Requests Actions</h5>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (Model.Status == TicketStatus.AssignedToDepartment)
+                    {
+                        <form asp-action="ChangeStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="newStatus" value="@TicketStatus.InProgress" />
+                            <button type="submit" class="btn btn-warning">Open Ticket</button>
+                        </form>
+                    }
+
+                    @if (Model.Status == TicketStatus.InProgress)
+                    {
+                        <form asp-action="ChangeStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="newStatus" value="@TicketStatus.Closed" />
+                            <button type="submit" class="btn btn-success">Close Ticket</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ✅ Manager Actions (back like before) *@
+    @if (showActions && currentRole == UserRole.Manager && managerCanAct)
+    {
+        <div class="card qd-card shadow-sm">
+            <div class="card-body">
+                <h5 class="mb-3">Manager Actions</h5>
+
+                @if (Model.Status == TicketStatus.New)
+                {
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="fw-semibold mb-1">Assign</div>
+                                <div class="text-muted small mb-3">Approve and assign to a user.</div>
+
+                                @if (users.Any())
+                                {
+                                    <form asp-action="ApproveAndAssign" method="post" class="row g-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+
+                                        <div class="col-12">
+                                            <label class="form-label">Assign to user</label>
+                                            <select name="assignedUserId" class="form-select" required>
+                                                <option value="">-- Select user --</option>
+                                                @foreach (var u in users)
+                                                {
+                                                    <option value="@u.Id">@u.UserName</option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Priority</label>
+                                            <select name="priority" class="form-select" required>
+                                                <option value="@TicketPriority.Normal">Normal</option>
+                                                <option value="@TicketPriority.High">High</option>
+                                                <option value="@TicketPriority.Critical">Critical</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <button type="submit" class="btn btn-success w-100">Approve &amp; Assign</button>
+                                        </div>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <div class="alert alert-warning mb-0">No users found for this department.</div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="fw-semibold mb-1">Solve</div>
+                                <div class="text-muted small mb-3">Start working without assigning.</div>
+
+                                <form asp-action="SolveMyself" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="btn btn-outline-primary w-100">Start Working</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="fw-semibold mb-1 text-danger">Reject</div>
+                                <div class="text-muted small mb-3">Reject and close (reason required).</div>
+
+                                <form asp-action="ChangeStatus" method="post" class="row g-2">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <input type="hidden" name="newStatus" value="@TicketStatus.Closed" />
+
+                                    <div class="col-12">
+                                        <label class="form-label">Reject reason</label>
+                                        <textarea name="comment" class="form-control" rows="3" required placeholder="Reason..."></textarea>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-outline-danger w-100">Reject &amp; Close</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Status == TicketStatus.InProgress && Model.AssignedUserId == null)
+                {
+                    <hr />
+                    <form asp-action="ManagerCloseSolved" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="btn btn-dark">Close Ticket</button>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="card qd-card shadow-sm">
+        <div class="card-body">
+            <h5 class="mb-3">History (Workflow)</h5>
+
+            @if (history.Any())
+            {
+                <div class="qd-history">
+                    @foreach (var h in history)
+                    {
+                        <div class="qd-history-item">
+                            <div class="small text-muted">@h.ChangedAt.ToLocalTime()</div>
+                            <div class="fw-bold mt-1">@h.OldStatus → @h.NewStatus</div>
+                            <div class="small mt-1">By: <strong>@h.ChangedBy</strong> (@h.Role)</div>
+
+                            @if (!string.IsNullOrWhiteSpace(h.Comment))
+                            {
+                                <div class="small mt-2 text-muted">@h.Comment</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="mb-0 text-muted">No history yet for this ticket.</p>
+            }
+        </div>
+    </div>
+
+    @if (!isAjax)
+    {
+        if (currentRole == UserRole.User && from == "requests")
+        {
+            <a asp-controller="Tickets" asp-action="MyAssigned" class="btn btn-secondary mt-3">Back</a>
+        }
+        else if (currentRole == UserRole.Admin)
+        {
+            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-secondary mt-3">Back</a>
+        }
+        else if (currentRole == UserRole.Manager)
+        {
+            <a asp-controller="Tickets" asp-action="ManagerDashboard" class="btn btn-secondary mt-3">Back</a>
+        }
+        else
+        {
+            <a asp-controller="Tickets" asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+        }
+    }
+</div>
