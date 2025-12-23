@@ -1,106 +1,81 @@
-\# IT Ticket System
+# IT Ticket System (ASP.NET Core)
 
-
-ASP.NET Core MVC Ticketing System for academic use.
-
-
-\## Requirements
-
-\- .NET SDK 8 or newer
-
-\- PostgreSQL
-
-\- Visual Studio 2022 or VS Code
-
-
+A simple IT Ticket Management System built with ASP.NET Core MVC and PostgreSQL.
 
 ---
 
+## Default Login
 
+| Role  | Username | Password |
+|-------|----------|----------|
+| Admin |  admin   |   1234   |
 
-\## Setup Instructions (Students)
+---
 
+## Option 1: Run Without Docker (Recommended for learning)
 
-\### 1) Clone the repository
+### Requirements
+- .NET 8 SDK
+- PostgreSQL
+- Visual Studio / VS Code
 
+### Steps
+
+1. Clone the repository
 ```bash
-
 git clone https://github.com/Sultan1996Ibrahim/ITTicketSystem.git
-
 cd ITTicketSystem
+Create PostgreSQL database
 
 
+2. Create PostgreSQL database
+(sql)
+CREATE DATABASE ITTicketSystem_V2;
 
 
-
-Create a PostgreSQL database (empty), for example:
-ITTicketSystem\_DB
-
-
-Then copy the example config:
-copy appsettings.Development.example.json appsettings.Development.json
-
-
-Edit appsettings.Development.json and set your connection string:
-
-"ConnectionStrings": {
-
-&nbsp; "DefaultConnection": "Host=localhost;Database=ITTicketSystem\_DB;Username=postgres;Password=YOUR\_PASSWORD"
-
+3.Create appsettings.Development.json
+(json)
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=ITTicketSystem_V2;Username=postgres;Password=1234"
+  }
 }
 
 
-
-
-
-
-
-Run the application:
-
+3.Run the project
+(bash)
 dotnet run
 
 
+4.Open browser
+(arduino)
+http://localhost:5000
 
-
-
-The application will:
-
-Apply migrations automatically
-
-Seed departments
-
-Seed default users
+Database, departments, and default users are created automatically on first run.
 
 
 
 
+## Option 2: Run With Docker (One-command setup)
 
-Default Accounts
+### Requirements
+-Docker Desktop
 
-Role	   Username    	Password
+### Steps
+(bash)
+docker compose up --build
 
-Admin  	  admin	        1234
-
-Additional users and managers are seeded automatically.
-
-
-
-
-Notes
-
-Database is NOT included (created automatically)
-
-Uploaded files are stored locally and ignored by Git
-
-This project is for educational purposes
+Open:
+(arduino)
+http://localhost:8080
 
 
+Notes:
 
-
+Docker is optional
+Database migrations and seed data run automatically
 
 
 Author
 Sultan Aleidi
-
-
 
