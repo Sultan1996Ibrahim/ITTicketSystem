@@ -57,6 +57,7 @@ Database, departments, and default users are created automatically on first run.
 
 
 ## Option 2: Run With Docker (One-command setup)
+"https://www.docker.com/products/docker-desktop/"
 
 ### Requirements
 -Docker Desktop
