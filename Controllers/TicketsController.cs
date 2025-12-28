@@ -378,7 +378,7 @@ namespace ITTicketSystem.Controllers
     var managerDeptIds = GetManagerDeptIds();
 
     var departmentsQuery = _context.Departments
-        .Where(d => d.ParentDepartmentId != null); // ✅ الفرعية فقط
+        .Where(d => d.ParentDepartmentId != null); 
 
     if (role == UserRole.User && userDeptId.HasValue)
         departmentsQuery = departmentsQuery.Where(d => d.Id != userDeptId.Value);
@@ -400,14 +400,13 @@ public async Task<IActionResult> Create([Bind("Title,Description,DepartmentId")]
     var userDeptId = GetCurrentDepartmentId();
     var managerDeptIds = GetManagerDeptIds();
 
-    // ✅ 1) تأكد أن القسم المختار موجود وهو "فرعي" فقط
     var departmentExists = await _context.Departments
         .AnyAsync(d => d.Id == ticket.DepartmentId && d.ParentDepartmentId != null);
 
     if (!departmentExists)
         ModelState.AddModelError("DepartmentId", "Selected department does not exist.");
 
-    // ✅ 2) User: لا يسمح بإرسال تذكرة لنفس إدارته (حتى لو كان قسمه رئيسي)
+    
     if (role == UserRole.User && userDeptId.HasValue)
     {
         var userDept = await _context.Departments
@@ -417,10 +416,10 @@ public async Task<IActionResult> Create([Bind("Title,Description,DepartmentId")]
 
         if (userDept != null)
         {
-            // جذر المستخدم: لو المستخدم قسمه فرعي نرجع للأب، لو رئيسي فالجذر نفسه
+            
             var userRootId = userDept.ParentDepartmentId ?? userDept.Id;
 
-            // جذر التارجت: بما أن التارجت لازم يكون فرعي، فـ ParentDepartmentId هو الجذر
+           
             var targetRootId = await _context.Departments
                 .Where(d => d.Id == ticket.DepartmentId)
                 .Select(d => d.ParentDepartmentId)
@@ -431,18 +430,18 @@ public async Task<IActionResult> Create([Bind("Title,Description,DepartmentId")]
         }
     }
 
-    // Manager: نفس منطقك (لا يرسل لقسم يديره)
+    
     if (role == UserRole.Manager && managerDeptIds.Any() && managerDeptIds.Contains(ticket.DepartmentId))
         ModelState.AddModelError("DepartmentId", "You cannot create a ticket for a department you manage.");
 
-    // لو فيه أخطاء: رجّع نفس الصفحة مع قائمة الأقسام الفرعية
+    
     if (!ModelState.IsValid)
     {
         var departmentsQuery = _context.Departments.Where(d => d.ParentDepartmentId != null);
 
         if (role == UserRole.User && userDeptId.HasValue)
         {
-            // نفس منطق المنع لكن أثناء العرض:
+            
             var userDept = await _context.Departments
                 .Where(d => d.Id == userDeptId.Value)
                 .Select(d => new { d.Id, d.ParentDepartmentId })
@@ -464,12 +463,11 @@ public async Task<IActionResult> Create([Bind("Title,Description,DepartmentId")]
         return View(ticket);
     }
 
-    // ====== إنشاء التذكرة (نفس منطقك) ======
     ticket.Status = TicketStatus.New;
 
     var userId = GetCurrentUserId();
     ticket.CreatedByUserId = userId;
-    ticket.CreatedBy = GetCurrentUserName(); // للعرض فقط
+    ticket.CreatedBy = GetCurrentUserName(); 
 
     ticket.CreatedAt = DateTime.UtcNow;
 
@@ -492,7 +490,7 @@ public async Task<IActionResult> Create([Bind("Title,Description,DepartmentId")]
     ticket.ReferenceNumber = $"TS-{year}-{ticket.Id:D6}";
     await _context.SaveChangesAsync();
 
-    // ====== المرفقات (نفس منطقك) ======
+   
     if (files != null && files.Count > 0)
     {
         var rootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
@@ -639,13 +637,13 @@ public async Task<IActionResult> Manage(int id)
     var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
     if (ticket == null) return NotFound();
 
-    // لازم نفس القسم + لازم التكت جديد
+    
     if (ticket.DepartmentId != deptId.Value) return Forbidden();
     if (ticket.Status != TicketStatus.New) return Forbidden();
 
     var oldStatus = ticket.Status;
 
-    // يسند لنفسه ويبدأ (أو يخليه AssignedToDepartment؟)
+    
     ticket.AssignedUserId = userId.Value;
     ticket.Status = TicketStatus.InProgress;
 
@@ -678,17 +676,16 @@ public async Task<IActionResult> ApproveAndAssign(int id, int assignedUserId, Ti
     var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
     if (ticket == null) return NotFound();
 
-    // لازم التكت ضمن إدارات المدير
     if (!managedDeptIds.Contains(ticket.DepartmentId)) return Forbidden();
 
-    // لازم التكت يكون New
+    
     if (ticket.Status != TicketStatus.New)
     {
         TempData["Error"] = "This ticket is not in New status.";
         return RedirectToAction(nameof(Details), new { id });
     }
 
-    // لازم اليوزر من نفس القسم
+    
     var userOk = await _context.AppUsers.AnyAsync(u =>
         u.Id == assignedUserId &&
         u.IsActive &&
@@ -739,7 +736,7 @@ public async Task<IActionResult> SolveMyself(int id)
 
     if (!managedDeptIds.Contains(ticket.DepartmentId)) return Forbidden();
 
-    // يسمح فقط وهو New
+    
     if (ticket.Status != TicketStatus.New)
     {
         TempData["Error"] = "This ticket is not in New status.";
@@ -749,7 +746,7 @@ public async Task<IActionResult> SolveMyself(int id)
     var oldStatus = ticket.Status;
 
     ticket.Status = TicketStatus.InProgress;
-    ticket.AssignedUserId = null; // manager بدأ بدون تعيين
+    ticket.AssignedUserId = null; 
 
     _context.TicketHistories.Add(new TicketHistory
     {
@@ -782,7 +779,7 @@ public async Task<IActionResult> ManagerCloseSolved(int id)
 
     if (!managedDeptIds.Contains(ticket.DepartmentId)) return Forbidden();
 
-    // نفس شرط الـ View عندك: InProgress و AssignedUserId == null
+    
     if (ticket.Status != TicketStatus.InProgress || ticket.AssignedUserId != null)
     {
         TempData["Error"] = "Ticket cannot be closed in its current state.";
@@ -822,15 +819,13 @@ public async Task<IActionResult> ChangeStatus(int id, TicketStatus newStatus, st
     var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
     if (ticket == null) return NotFound();
 
-    // صلاحيات:
-    // - User: لازم يكون هو AssignedUserId عشان يغير AssignedToDepartment -> InProgress أو InProgress -> Closed
-    // - Manager: يقدر يقفل (Reject) من New إلى Closed بشرط أنه يدير قسم التكت
+    
     if (role == UserRole.User)
     {
         if (!ticket.AssignedUserId.HasValue || ticket.AssignedUserId.Value != userId.Value)
             return Forbidden();
 
-        // انتقالات اليوزر المسموحة
+        
         if (ticket.Status == TicketStatus.AssignedToDepartment && newStatus != TicketStatus.InProgress)
             return Forbidden();
 
@@ -845,7 +840,7 @@ public async Task<IActionResult> ChangeStatus(int id, TicketStatus newStatus, st
         var managedDeptIds = GetManagerDeptIds();
         if (!managedDeptIds.Contains(ticket.DepartmentId)) return Forbidden();
 
-        // Reject: من New إلى Closed فقط (حسب View)
+        
         if (!(ticket.Status == TicketStatus.New && newStatus == TicketStatus.Closed))
             return Forbidden();
 

@@ -11,7 +11,7 @@ namespace ITTicketSystem.Data
             using var context = new ApplicationDbContext(
                 serviceProvider.GetRequiredService<DbContextOptions<ApplicationDbContext>>());
 
-            // إذا فيه أقسام لا تعيد الزراعة
+           
             if (context.Departments.Any())
             {
                 Console.WriteLine("SeedData: Departments already exist, skipping seeding.");
@@ -20,7 +20,7 @@ namespace ITTicketSystem.Data
 
             Console.WriteLine("SeedData: Seeding departments (3 main + 6 sub)...");
 
-            // 1) الأقسام الرئيسية
+         
             var hr = new Department { Name = "HR" };
             var it = new Department { Name = "IT" };
             var finance = new Department { Name = "Finance" };
@@ -28,7 +28,7 @@ namespace ITTicketSystem.Data
             context.Departments.AddRange(hr, it, finance);
             context.SaveChanges();
 
-            // 2) الأقسام الفرعية
+        
             var children = new List<Department>
             {
                 new Department { Name = "HR Training", ParentDepartment = hr },

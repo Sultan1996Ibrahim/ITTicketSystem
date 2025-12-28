@@ -161,7 +161,7 @@ namespace ITTicketSystem.Controllers
                 ModelState.AddModelError("", "Manager must have at least one department.");
             }
 
-            // ✅ User لازم يختار Department
+            
             if (model.Role == UserRole.User && !model.DepartmentId.HasValue)
             {
                 ModelState.AddModelError("DepartmentId", "Department is required for User.");
@@ -259,7 +259,7 @@ namespace ITTicketSystem.Controllers
                 ModelState.AddModelError("", "Manager must have at least one department.");
             }
 
-            // ✅ User لازم يختار Department (مهم جدًا لحل FromDepartment)
+            
             if (vm.Role == UserRole.User && !vm.DepartmentId.HasValue)
             {
                 ModelState.AddModelError("DepartmentId", "Department is required for User.");

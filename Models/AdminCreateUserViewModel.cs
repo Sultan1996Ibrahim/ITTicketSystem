@@ -13,10 +13,10 @@ namespace ITTicketSystem.Models
 
         public UserRole Role { get; set; } = UserRole.User;
 
-        // User فقط
+        
         public int? DepartmentId { get; set; }
 
-        // Manager فقط (عدة إدارات)
+        
         public List<int> ManagedDepartmentIds { get; set; } = new();
 
         public bool IsActive { get; set; } = true;

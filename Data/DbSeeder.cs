@@ -7,7 +7,7 @@ namespace ITTicketSystem.Data
     {
         public static async Task SeedDefaultUsersAndManagersAsync(ApplicationDbContext db)
         {
-            // 0) لازم الأقسام موجودة
+            
             var departments = await db.Departments.ToListAsync();
             if (!departments.Any()) return;
 
@@ -23,14 +23,14 @@ namespace ITTicketSystem.Data
             var required = new[] { hrTraining, hrManagement, itTraining, itManagement, finTraining, finManagement };
             if (required.Any(d => d == null)) return;
 
-            // 1) اجمع المستخدمين اللي لهم تذاكر (لازم ما ننحذفوا)
+            
             var referencedUserIds = await db.Tickets
                 .Where(t => t.CreatedByUserId.HasValue)
                 .Select(t => t.CreatedByUserId!.Value)
                 .Distinct()
                 .ToListAsync();
 
-            // 2) احذف روابط المدراء أولاً (آمن) - ثم احذف المستخدمين غير المحميين
+            
             var linksToRemove = await db.ManagerDepartments.ToListAsync();
             if (linksToRemove.Any())
             {
@@ -38,7 +38,7 @@ namespace ITTicketSystem.Data
                 await db.SaveChangesAsync();
             }
 
-            // 3) احذف فقط المستخدمين (غير admin) واللي ما عليهم Tickets
+           
             var usersToRemove = await db.AppUsers
                 .Where(u => u.UserName != "admin" && !referencedUserIds.Contains(u.Id))
                 .ToListAsync();
@@ -49,7 +49,7 @@ namespace ITTicketSystem.Data
                 await db.SaveChangesAsync();
             }
 
-            // 4) تأكد admin موجود
+           
             var adminExists = await db.AppUsers.AnyAsync(u => u.UserName == "admin");
             if (!adminExists)
             {
@@ -85,18 +85,18 @@ namespace ITTicketSystem.Data
                 }
                 else
                 {
-                    // تحديث بسيط (لا نحذف)
+                    
                     u.Role = role;
                     u.IsActive = true;
                     u.DepartmentId = departmentId;
-                    // (اختياري) توحيد كلمة السر:
+                    
                     u.PasswordHash = passwordHash;
                     await db.SaveChangesAsync();
                 }
                 return u;
             }
 
-            // 5) أضف/حدّث users الفرعيين
+            
             await UpsertUser("hr.training", UserRole.User, hrTraining!.Id);
             await UpsertUser("hr.management", UserRole.User, hrManagement!.Id);
 
@@ -106,12 +106,12 @@ namespace ITTicketSystem.Data
             await UpsertUser("fin.training", UserRole.User, finTraining!.Id);
             await UpsertUser("fin.management", UserRole.User, finManagement!.Id);
 
-            // 6) أضف/حدّث المدراء
+          
             var hrMgr = await UpsertUser("mgr.hr", UserRole.Manager, null);
             var itMgr = await UpsertUser("mgr.it", UserRole.Manager, null);
             var finMgr = await UpsertUser("mgr.finance", UserRole.Manager, null);
 
-            // 7) اربط كل Manager بالقسمين الفرعيين (Training + Management)
+            
             var newLinks = new List<ManagerDepartment>
             {
                 new ManagerDepartment { ManagerUserId = hrMgr.Id,  DepartmentId = hrTraining!.Id },
